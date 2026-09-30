@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity() {
         banner.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         lifecycleScope.launch {
             if (SessionStore.pin(this@MainActivity) == null)
-                Toast.makeText(this@MainActivity, "Selamat datang! Buat PIN dulu di Pengaturan.", Toast.LENGTH_LONG).show()
+                startActivity(Intent(this@MainActivity, SetupActivity::class.java))
         }
     }
 

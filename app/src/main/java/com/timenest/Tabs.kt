@@ -121,8 +121,19 @@ class SleepFragment : Fragment() {
                     .setPositiveButton("Aktifkan") { _, _ -> AdminHelper.request(requireContext()) }.show()
             }
         }
-        v.findViewById<View>(R.id.btnMinus).setOnClickListener { totalMin = (totalMin - 5).coerceAtLeast(5); draw() }
-        v.findViewById<View>(R.id.btnPlus).setOnClickListener { totalMin = (totalMin + 5).coerceAtMost(720); draw() }
+        v.findViewById<View>(R.id.btnMinus).setOnClickListener { totalMin = (totalMin - 1).coerceAtLeast(1); mode = "countdown"; draw() }
+        v.findViewById<View>(R.id.btnPlus).setOnClickListener { totalMin = (totalMin + 1).coerceAtMost(720); mode = "countdown"; draw() }
+        val dial = v.findViewById<View>(R.id.dialWrap)
+        dial.setOnTouchListener { vv, e ->
+            if (e.action == android.view.MotionEvent.ACTION_DOWN) vv.parent.requestDisallowInterceptTouchEvent(true)
+            if (e.action == android.view.MotionEvent.ACTION_DOWN || e.action == android.view.MotionEvent.ACTION_MOVE) {
+                val cx = vv.width / 2f; val cy = vv.height / 2f
+                val deg = (Math.toDegrees(kotlin.math.atan2((e.x - cx).toDouble(), (cy - e.y).toDouble())) + 360) % 360
+                totalMin = (deg / 2).toInt().coerceIn(1, 180)
+                mode = "countdown"; draw()
+            }
+            true
+        }
         v.findViewById<View>(R.id.tabDur).setOnClickListener { mode = "countdown"; draw() }
         v.findViewById<View>(R.id.tabClock).setOnClickListener {
             TimePickerDialog(context, { _, h, m -> endH = h; endM = m; mode = "clock"; draw() }, endH, endM, true).show()
@@ -166,13 +177,14 @@ class SleepFragment : Fragment() {
             }
             lifecycleScope.launch {
                 if (SessionStore.pin(c) == null) {
-                    Toast.makeText(c, "Buat PIN dulu di Pengaturan", Toast.LENGTH_LONG).show()
-                    startActivity(Intent(c, SettingsActivity::class.java)); return@launch
+                    Toast.makeText(c, "Buat PIN dulu", Toast.LENGTH_LONG).show()
+                    startActivity(Intent(c, SetupActivity::class.java)); return@launch
                 }
-                if (!Perms.notifOk(c)) Toast.makeText(c, "Izinkan notifikasi agar timer terpantau", Toast.LENGTH_LONG).show()
+                if (!Perms.notifOk(c)) Toast.makeText(c, "Izinkan notifikasi agar hitung mundur terlihat", Toast.LENGTH_LONG).show()
                 SessionStore.save(c, now, end, mode)
                 TimerService.start(c)
-                startActivity(Intent(c, ActiveTimerActivity::class.java))
+                Toast.makeText(c, "Timer jalan di background — lihat notifikasi", Toast.LENGTH_LONG).show()
+                activity?.finish() // tutup aplikasi, service + notifikasi tetap jalan
             }
         } catch (e: Exception) { Toast.makeText(c, e.message, Toast.LENGTH_SHORT).show() }
     }

@@ -44,7 +44,7 @@ class TimerService : Service() {
                 if (TimerOpts.soundOn) checkWarn(remain)
                 val nm = getSystemService(NotificationManager::class.java)
                 nm.notify(1, notif("Sisa ${TimeCalc.format(remain)} • selesai ${hm(t.second)}"))
-                delay(5000)
+                delay(1000)
             }
         }
         return START_STICKY

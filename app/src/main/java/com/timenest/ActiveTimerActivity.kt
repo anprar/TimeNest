@@ -8,7 +8,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.widget.*
-import androidx.appcompat.app.AlertDialog
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
@@ -17,6 +17,11 @@ import java.util.Calendar
 class ActiveTimerActivity : AppCompatActivity() {
     private lateinit var txt: TextView
     private lateinit var sub: TextView
+    private var pendingPin: (() -> Unit)? = null
+    private val pinLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (it.resultCode == RESULT_OK) pendingPin?.invoke()
+        pendingPin = null
+    }
     private val hd = Handler(Looper.getMainLooper())
     private var end = 0L; private var start = 0L; private var mode = ""
     private val tick = object : Runnable {
@@ -92,15 +97,8 @@ class ActiveTimerActivity : AppCompatActivity() {
     }
 
     private fun askPin(ok: () -> Unit) {
-        val e = EditText(this).apply { hint = "PIN orang tua"; inputType = 129 }
-        AlertDialog.Builder(this).setTitle("PIN").setView(e)
-            .setNegativeButton("Batal", null)
-            .setPositiveButton("OK") { _, _ ->
-                lifecycleScope.launch {
-                    val h = SessionStore.pin(this@ActiveTimerActivity)
-                    if (h == PinUtil.hash(e.text.toString())) ok() else Toast.makeText(this@ActiveTimerActivity, "PIN salah", Toast.LENGTH_SHORT).show()
-                }
-            }.show()
+        pendingPin = ok
+        pinLauncher.launch(PinActivity.createIntent(this, "verify"))
     }
 
     override fun onDestroy() { hd.removeCallbacks(tick); super.onDestroy() }

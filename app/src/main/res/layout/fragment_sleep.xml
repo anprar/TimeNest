@@ -6,15 +6,16 @@
 <LinearLayout android:orientation="vertical" android:padding="16dp"
     android:gravity="center_horizontal"
     android:layout_width="match_parent" android:layout_height="wrap_content">
-    <FrameLayout android:layout_width="240dp" android:layout_height="240dp">
+    <FrameLayout android:id="@+id/dialWrap" android:layout_width="300dp" android:layout_height="300dp">
         <ProgressBar android:id="@+id/ring" style="?android:attr/progressBarStyleHorizontal"
             android:progressDrawable="@drawable/ring" android:max="100" android:progress="12"
             android:layout_width="match_parent" android:layout_height="match_parent" />
         <LinearLayout android:orientation="vertical" android:gravity="center"
             android:layout_width="match_parent" android:layout_height="match_parent">
-            <TextView android:text="jam : menit" android:textColor="@color/text2"
+            <TextView android:text="jam : menit — geser lingkaran / +− per 1 mnt" android:textColor="@color/text2"
+                android:gravity="center"
                 android:layout_width="wrap_content" android:layout_height="wrap_content" />
-            <TextView android:id="@+id/tvTime" android:text="00:10" android:textSize="56sp"
+            <TextView android:id="@+id/tvTime" android:text="00:10" android:textSize="64sp"
                 android:textColor="@color/text"
                 android:layout_width="wrap_content" android:layout_height="wrap_content" />
             <LinearLayout android:orientation="horizontal"
