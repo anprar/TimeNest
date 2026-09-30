@@ -47,7 +47,9 @@ class MainActivity : AppCompatActivity() {
         val banner = findViewById<View>(R.id.bannerPerm)
         banner.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         lifecycleScope.launch {
-            if (SessionStore.pin(this@MainActivity) == null)
+            // hanya ke setup bila PIN belum ada DAN belum memilih LEWATI;
+            // tanpa cek skipped -> loop Setup↔Main (blink-blink)
+            if (SessionStore.pin(this@MainActivity) == null && !SessionStore.isSkipped(this@MainActivity))
                 startActivity(Intent(this@MainActivity, SetupActivity::class.java))
         }
     }
