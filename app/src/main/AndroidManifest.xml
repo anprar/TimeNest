@@ -60,6 +60,17 @@
 
         <receiver android:name=".ScheduleReceiver" android:exported="false" />
         <receiver android:name=".FinishReceiver" android:exported="false" />
+        <service android:name=".TimeNestAccess"
+            android:label="TimeNest"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/access_config" />
+        </service>
         <service android:name=".QSTile"
             android:label="TimeNest"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"

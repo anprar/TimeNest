@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">TimeNest</string>
+    <string name="access_desc">Mengunci layar saat timer TimeNest habis. Alternatif Admin Perangkat — mudah dimatikan dan tidak menghalangi uninstal.</string>
 </resources>

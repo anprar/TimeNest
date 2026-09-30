@@ -50,12 +50,8 @@ class FinishReceiver : BroadcastReceiver() {
                         v?.vibrate(android.os.VibrationEffect.createWaveform(longArrayOf(0, 500, 300, 500), -1))
                     } catch (_: Exception) {}
                 }
-                val locked = if (TimerOpts.lockAtEnd) lockNow(c) else false
-                val status = when {
-                    !TimerOpts.lockAtEnd -> "SELESAI (tanpa kunci, sesuai opsi)"
-                    locked -> "SELESAI dikunci"
-                    else -> "SELESAI gagal kunci (izin Admin belum aktif)"
-                }
+                val status = if (!TimerOpts.lockAtEnd) "SELESAI (tanpa kunci, sesuai opsi)"
+                else LockHelper.lock(c)
                 ScreenTimeoutHelper.restore(c)
                 SessionStore.addHist(c, "${java.util.Date()} | ${t.third} | $status")
                 SessionStore.clear(c)
@@ -67,9 +63,4 @@ class FinishReceiver : BroadcastReceiver() {
             } finally { pend.finish() }
         }
     }
-    private fun lockNow(c: Context): Boolean = try {
-        val dpm = c.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        val cn = ComponentName(c, TimeNestDeviceAdmin::class.java)
-        if (dpm.isAdminActive(cn)) { dpm.lockNow(); true } else false
-    } catch (_: Exception) { false }
 }

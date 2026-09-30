@@ -128,13 +128,14 @@ class SleepFragment : Fragment() {
         val warn = v.findViewById<TextView>(R.id.tvLockWarn)
         lock.setOnCheckedChangeListener { _, on -> TimerOpts.lockAtEnd = on }
         snd.setOnCheckedChangeListener { _, on -> TimerOpts.soundOn = on }
-        if (!AdminHelper.isActive(requireContext())) warn.visibility = View.VISIBLE
+        if (!AdminHelper.isActive(requireContext()) && !AccessHelper.isOn(requireContext())) warn.visibility = View.VISIBLE
         lock.setOnClickListener {
-            if (!AdminHelper.isActive(requireContext())) {
+            if (!AdminHelper.isActive(requireContext()) && !AccessHelper.isOn(requireContext())) {
                 warn.visibility = View.VISIBLE
-                AlertDialog.Builder(requireContext()).setMessage("Aktifkan 'Administrator Perangkat' agar timer dapat mengunci layar saat waktu habis.")
+                AlertDialog.Builder(requireContext()).setMessage("Pilih cara mengunci (Admin tidak wajib):\n• Aksesibilitas — mudah dilepas, uninstal normal\n• Admin — kunci penuh")
                     .setNegativeButton("Nanti", null)
-                    .setPositiveButton("Aktifkan") { _, _ -> AdminHelper.request(requireContext()) }.show()
+                    .setPositiveButton("Aksesibilitas") { _, _ -> AccessHelper.open(requireContext()) }
+                    .setNeutralButton("Admin") { _, _ -> AdminHelper.request(requireContext()) }.show()
             }
         }
         v.findViewById<View>(R.id.btnMinus).setOnClickListener { totalMin = (totalMin - 1).coerceAtLeast(1); mode = "countdown"; draw() }

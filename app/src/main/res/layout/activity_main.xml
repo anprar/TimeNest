@@ -15,6 +15,17 @@
             android:contentDescription="Pengaturan"
             android:layout_width="48dp" android:layout_height="48dp" />
     </LinearLayout>
+    <LinearLayout android:id="@+id/statusCard" android:orientation="vertical"
+        android:padding="12dp" android:layout_margin="12dp"
+        android:background="#2A2A2A"
+        android:layout_width="match_parent" android:layout_height="wrap_content">
+        <TextView android:id="@+id/statusText" android:text="○ Tidak ada timer berjalan"
+            android:textSize="18sp" android:textColor="@color/text"
+            android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <TextView android:id="@+id/statusSub" android:text="Atur waktu di bawah lalu tekan MULAI"
+            android:textColor="@color/text2"
+            android:layout_width="match_parent" android:layout_height="wrap_content" />
+    </LinearLayout>
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabs" app:tabMode="fixed"
         android:background="@color/bg"

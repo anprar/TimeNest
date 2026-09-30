@@ -80,12 +80,8 @@ class TimerService : Service() {
         if (!FinishGuard.done.add(end)) { stopSelf(); return } // sudah dikunci via alarm
         FinishAlarm.cancel(this)
         if (TimerOpts.soundOn) warn("Waktu habis")
-        val locked = if (TimerOpts.lockAtEnd) lockNow() else false
-        val status = when {
-            !TimerOpts.lockAtEnd -> "SELESAI (tanpa kunci, sesuai opsi)"
-            locked -> "SELESAI dikunci"
-            else -> "SELESAI gagal kunci (izin Admin belum aktif)"
-        }
+        val status = if (!TimerOpts.lockAtEnd) "SELESAI (tanpa kunci, sesuai opsi)"
+        else LockHelper.lock(this)
         ScreenTimeoutHelper.restore(this)
         SessionStore.addHist(this, "${java.util.Date()} | $mode | $status")
         SessionStore.clear(this)
@@ -94,13 +90,6 @@ class TimerService : Service() {
             .setContentTitle("Waktu habis").setContentText(status)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm).build())
         stopSelf()
-    }
-    private fun lockNow(): Boolean {
-        return try {
-            val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-            val c = ComponentName(this, TimeNestDeviceAdmin::class.java)
-            if (dpm.isAdminActive(c)) { dpm.lockNow(); true } else false
-        } catch (_: Exception) { false }
     }
     override fun onDestroy() { CoroutineScope(Dispatchers.IO).launch { ScreenTimeoutHelper.restore(this@TimerService) }; scope.cancel(); super.onDestroy() }
 }

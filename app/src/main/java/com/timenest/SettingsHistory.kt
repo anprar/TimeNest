@@ -56,8 +56,17 @@ class SettingsActivity : AppCompatActivity() {
             lifecycleScope.launch { UiPrefs.setTab(this@SettingsActivity, idx) }
         }
 
-        h("Cara Mematikan Layar")
-        p("Matikan: layar padam, bisa dibuka sidik jari/wajah.\nKunci: perangkat dikunci, perlu PIN/pola (lebih aman untuk anak).")
+        h("Cara Mematikan Layar (Admin tidak wajib)")
+        p("Matikan: utamakan Aksesibilitas (mudah dilepas, uninstal normal).\nKunci: utamakan Admin Perangkat (kunci penuh).")
+        val tvMethod = TextView(this); root.addView(tvMethod)
+        lifecycleScope.launch {
+            val m = UiPrefs.lockMode(this@SettingsActivity)
+            tvMethod.text = "Metode aktif: " + when {
+                AccessHelper.isOn(this@SettingsActivity) -> "aksesibilitas ✓"
+                AdminHelper.isActive(this@SettingsActivity) -> "Admin ✓"
+                else -> "BELUM ADA — timer tidak akan mengunci"
+            } + " (pilihan: $m)"
+        }
         val rgLock = RadioGroup(this)
         rgLock.addView(RadioButton(this).apply { text = "Matikan"; tag = "mati" })
         rgLock.addView(RadioButton(this).apply { text = "Kunci"; tag = "kunci" })
@@ -75,12 +84,14 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         h("Izin")
+        permRow(root, "Aksesibilitas TimeNest (disarankan)", "Pengunci utama. Mudah dimatikan, tidak menghalangi uninstal.", AccessHelper.isOn(this)) { AccessHelper.open(this) }
         permRow(root, "Ubah Pengaturan Sistem", "Untuk waktu tunggu layar.", Perms.writeOk(this)) { ScreenTimeoutHelper.reqWrite(this) }
-        permRow(root, "Administrator Perangkat", "Untuk mengunci saat waktu habis.", AdminHelper.isActive(this)) { AdminHelper.request(this) }
+        permRow(root, "Administrator Perangkat (opsional)", "Cadangan pengunci.", AdminHelper.isActive(this)) { AdminHelper.request(this) }
+        root.addView(Button(this).apply { text = "Nonaktifkan Admin (sebelum uninstal)"; setOnClickListener { AdminHelper.remove(this@SettingsActivity); refreshPending = true } })
         permRow(root, "Notifikasi", "Status & kontrol timer.", Perms.notifOk(this)) { openNotif() }
         if (Build.VERSION.SDK_INT >= 31)
             permRow(root, "Alarm Persis", "Agar jadwal tepat waktu.", Perms.exactOk(this)) { Perms.reqExact(this) }
-        permRow(root, "Abaikan Optimasi Baterai", "Agar tidak dimatikan OPPO/ColorOS.", ignoringBattery()) { reqIgnoreBattery() }
+        permRow(root, "Abaikan Optimasi Baterai", "Agar timer tetap jalan di background.", ignoringBattery()) { reqIgnoreBattery() }
 
         h("Panduan Baterai (semua HP)")
         p("1. Pengaturan > Aplikasi > TimeNest > Baterai > Tanpa pembatasan.\n2. Izinkan autostart/berjalan di latar.\n3. Kunci aplikasi di layar recent-apps.")

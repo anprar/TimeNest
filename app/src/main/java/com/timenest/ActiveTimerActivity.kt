@@ -51,7 +51,7 @@ class ActiveTimerActivity : AppCompatActivity() {
             sub.text = "Mode: $mode\nSelesai: %02d:%02d\nDurasi awal: %s".format(
                 cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), TimeCalc.summary(end - start))
             // cek status izin lock
-            if (!isAdmin()) sub.append("\n⚠ Izin kunci BELUM aktif — perangkat tidak akan terkunci otomatis.")
+            if (!isAdmin() && !AccessHelper.isOn(this@ActiveTimerActivity)) sub.append("\n⚠ Metode kunci BELUM aktif — perangkat tidak akan terkunci otomatis.")
             hd.post(tick)
         }
     }
