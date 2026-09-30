@@ -3,5 +3,5 @@
     android:minWidth="180dp" android:minHeight="80dp"
     android:updatePeriodMillis="600000"
     android:initialLayout="@layout/widget_timer"
-    android:description="TimeNest timer"
+    android:description="@string/app_name"
     android:widgetCategory="home_screen" />
