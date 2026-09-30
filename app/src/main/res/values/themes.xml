@@ -1,3 +1,7 @@
 <resources>
-    <style name="Theme.TimeNest" parent="Theme.Material3.DayNight.NoActionBar" />
+    <style name="Theme.TimeNest" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/accent</item>
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="colorOnPrimary">@color/text</item>
+    </style>
 </resources>

@@ -36,6 +36,7 @@ object SessionStore {
     }
     suspend fun setPin(c: Context, h: String) { c.ds.edit { it[PINH] = h } }
     suspend fun pin(c: Context): String? = c.ds.data.map { it[PINH] }.first()
+    suspend fun clearPin(c: Context) { c.ds.edit { it.remove(PINH) } }
     suspend fun lastMode(c: Context) = c.ds.data.map { it[LASTMODE] ?: "countdown" }.first()
     suspend fun setLastMode(c: Context, m: String) { c.ds.edit { it[LASTMODE] = m } }
     suspend fun addHist(c: Context, line: String) {

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/bg"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+<LinearLayout android:orientation="vertical" android:padding="16dp"
+    android:gravity="center_horizontal"
+    android:layout_width="match_parent" android:layout_height="wrap_content">
+    <FrameLayout android:layout_width="240dp" android:layout_height="240dp">
+        <ProgressBar android:id="@+id/ring" style="?android:attr/progressBarStyleHorizontal"
+            android:progressDrawable="@drawable/ring" android:max="100" android:progress="12"
+            android:layout_width="match_parent" android:layout_height="match_parent" />
+        <LinearLayout android:orientation="vertical" android:gravity="center"
+            android:layout_width="match_parent" android:layout_height="match_parent">
+            <TextView android:text="jam : menit" android:textColor="@color/text2"
+                android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            <TextView android:id="@+id/tvTime" android:text="00:10" android:textSize="56sp"
+                android:textColor="@color/text"
+                android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            <LinearLayout android:orientation="horizontal"
+                android:layout_width="wrap_content" android:layout_height="wrap_content">
+                <Button android:id="@+id/btnMinus" android:text="−" android:minWidth="48dp"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                <Button android:id="@+id/btnStart" android:text="MULAI"
+                    android:layout_marginHorizontal="8dp"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                <Button android:id="@+id/btnPlus" android:text="+" android:minWidth="48dp"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
+    <TextView android:id="@+id/tvSummary" android:textColor="@color/text2"
+        android:layout_marginTop="8dp"
+        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+    <LinearLayout android:orientation="horizontal" android:layout_marginTop="8dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content">
+        <Button android:id="@+id/tabDur" android:text="Hitung Mundur" android:layout_weight="1"
+            android:layout_width="0dp" android:layout_height="wrap_content" />
+        <Button android:id="@+id/tabClock" android:text="Selesai Pukul" android:layout_weight="1"
+            android:layout_width="0dp" android:layout_height="wrap_content" />
+    </LinearLayout>
+    <TextView android:text="Preset" android:textColor="@color/text"
+        android:layout_marginTop="12dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <GridLayout android:id="@+id/gridPreset" android:columnCount="3" android:useDefaultMargins="true"
+        android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <TextView android:text="Opsi Akhir Timer" android:textColor="@color/text"
+        android:layout_marginTop="12dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <CheckBox android:id="@+id/cbLock" android:text="Matikan / kunci layar (butuh Admin Perangkat)"
+        android:textColor="@color/text" android:checked="true"
+        android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <CheckBox android:id="@+id/cbSound" android:text="Suara + getar peringatan &amp; waktu habis"
+        android:textColor="@color/text" android:checked="true"
+        android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <TextView android:id="@+id/tvLockWarn" android:textColor="@color/warn" android:visibility="gone"
+        android:text="⚠ Izin Admin belum aktif — perangkat tidak akan terkunci."
+        android:layout_width="match_parent" android:layout_height="wrap_content" />
+</LinearLayout>
+</ScrollView>

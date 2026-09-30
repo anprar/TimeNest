@@ -21,11 +21,18 @@ object ScreenTimeoutHelper {
     private val VAL = intPreferencesKey("st_val")
     private val ORIG = intPreferencesKey("st_orig")
 
-    suspend fun getMode(c: Context) = c.ds.data.map { it[MODE] ?: 0 }.first()
-    suspend fun getVal(c: Context) = c.ds.data.map { it[VAL] ?: -1 }.first()
+    suspend fun getMode(c: Context) = c.ds.data.map { it[MODE] ?: 1 }.first()
+    suspend fun getVal(c: Context) = c.ds.data.map { it[VAL] ?: 60000 }.first()
     suspend fun set(c: Context, mode: Int, v: Int) { c.ds.edit { it[MODE] = mode; it[VAL] = v } }
+    fun getValSync(c: Context): Int = try {
+        kotlinx.coroutines.runBlocking { getVal(c) }
+    } catch (_: Exception) { 60000 }
     fun canWrite(c: Context) = Settings.System.canWrite(c)
     fun reqWrite(c: Context) { try { c.startActivity(Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply { data = android.net.Uri.parse("package:${c.packageName}") }.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) {} }
+    fun applyNow(c: Context, v: Int) {
+        if (!canWrite(c) || v < 0) return
+        try { Settings.System.putInt(c.contentResolver, Settings.System.SCREEN_OFF_TIMEOUT, v) } catch (_: Exception) {}
+    }
     suspend fun apply(c: Context) {
         if (getMode(c) != 1) return
         val v = getVal(c); if (v < 0) return
@@ -63,14 +70,20 @@ object ScheduleStore {
     }
     suspend fun arm(c: Context) {
         val p = c.ds.data.first()
+        if (p[EN] != true) return
         val cal = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, p[H] ?: 16); set(Calendar.MINUTE, p[M] ?: 0); set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
             if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
         }
         val pi = PendingIntent.getBroadcast(c, 99, Intent(c, ScheduleReceiver::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         try {
             val am = c.getSystemService(AlarmManager::class.java)
-            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pi)
+            try {
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pi)
+            } catch (e: SecurityException) {
+                am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pi) // fallback ±menit
+            }
         } catch (_: Exception) {}
     }
     fun disarm(c: Context) {

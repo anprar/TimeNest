@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:background="@color/bg"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+<LinearLayout android:orientation="vertical" android:padding="16dp"
+    android:layout_width="match_parent" android:layout_height="wrap_content">
+    <TextView android:text="PENJADWAL" android:textSize="18sp" android:textColor="@color/text"
+        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+    <TextView android:text="Contoh: setiap hari 16:00 mulai 60 menit, atau sampai 18:00."
+        android:textColor="@color/text2" android:layout_marginBottom="8dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <EditText android:id="@+id/eH" android:hint="jam mulai (0-23)" android:inputType="number"
+        android:textColor="@color/text" android:textColorHint="@color/text2"
+        android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <EditText android:id="@+id/eM" android:hint="menit mulai" android:inputType="number"
+        android:textColor="@color/text" android:textColorHint="@color/text2"
+        android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <EditText android:id="@+id/eD" android:hint="durasi menit (0 = pakai jam selesai)" android:inputType="number"
+        android:textColor="@color/text" android:textColorHint="@color/text2"
+        android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <LinearLayout android:orientation="horizontal"
+        android:layout_width="match_parent" android:layout_height="wrap_content">
+        <EditText android:id="@+id/eEH" android:hint="jam selesai" android:inputType="number"
+            android:layout_weight="1" android:textColor="@color/text" android:textColorHint="@color/text2"
+            android:layout_width="0dp" android:layout_height="wrap_content" />
+        <EditText android:id="@+id/eEM" android:hint="menit selesai" android:inputType="number"
+            android:layout_weight="1" android:textColor="@color/text" android:textColorHint="@color/text2"
+            android:layout_width="0dp" android:layout_height="wrap_content" />
+    </LinearLayout>
+    <TextView android:id="@+id/tvSch" android:textColor="@color/text2"
+        android:layout_marginTop="8dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <Button android:id="@+id/btnSave" android:text="Simpan &amp; aktifkan"
+        android:layout_marginTop="8dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <Button android:id="@+id/btnOff" android:text="Nonaktifkan"
+        android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <TextView android:id="@+id/tvSchWarn" android:textColor="@color/warn" android:visibility="gone"
+        android:text="⚠ Izin alarm persis ditolak — jadwal memakai alarm tidak-persis (±menit)."
+        android:layout_width="match_parent" android:layout_height="wrap_content" />
+</LinearLayout>
+</ScrollView>

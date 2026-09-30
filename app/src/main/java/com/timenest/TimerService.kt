@@ -41,7 +41,7 @@ class TimerService : Service() {
                 val now = System.currentTimeMillis()
                 val remain = t.second - now
                 if (remain <= 0) { onFinish(t.first, t.second, t.third); break }
-                checkWarn(remain)
+                if (TimerOpts.soundOn) checkWarn(remain)
                 val nm = getSystemService(NotificationManager::class.java)
                 nm.notify(1, notif("Sisa ${TimeCalc.format(remain)} • selesai ${hm(t.second)}"))
                 delay(5000)
@@ -77,14 +77,19 @@ class TimerService : Service() {
         } catch (_: Exception) {}
     }
     private suspend fun onFinish(start: Long, end: Long, mode: String) {
-        warn("Waktu habis")
-        val locked = lockNow()
+        if (TimerOpts.soundOn) warn("Waktu habis")
+        val locked = if (TimerOpts.lockAtEnd) lockNow() else false
+        val status = when {
+            !TimerOpts.lockAtEnd -> "SELESAI (tanpa kunci, sesuai opsi)"
+            locked -> "SELESAI dikunci"
+            else -> "SELESAI gagal kunci (izin Admin belum aktif)"
+        }
         ScreenTimeoutHelper.restore(this)
-        SessionStore.addHist(this, "${java.util.Date()} | $mode | ${if (locked) "SELESAI dikunci" else "SELESAI gagal kunci"}")
+        SessionStore.addHist(this, "${java.util.Date()} | $mode | $status")
         SessionStore.clear(this)
         val nm = getSystemService(NotificationManager::class.java)
         nm.notify(2, NotificationCompat.Builder(this, CH)
-            .setContentTitle("Waktu habis").setContentText(if (locked) "Perangkat dikunci" else "Izin kunci belum aktif")
+            .setContentTitle("Waktu habis").setContentText(status)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm).build())
         stopSelf()
     }

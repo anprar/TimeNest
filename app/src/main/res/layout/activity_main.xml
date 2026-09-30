@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:background="@color/bg"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <LinearLayout android:orientation="horizontal"
+        android:padding="16dp" android:gravity="center_vertical"
+        android:layout_width="match_parent" android:layout_height="wrap_content">
+        <TextView android:text="TimeNest" android:textSize="22sp"
+            android:textColor="@color/text" android:layout_weight="1"
+            android:layout_width="0dp" android:layout_height="wrap_content" />
+        <ImageButton android:id="@+id/btnSettings" android:src="@android:drawable/ic_menu_preferences"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Pengaturan"
+            android:layout_width="48dp" android:layout_height="48dp" />
+    </LinearLayout>
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabs" app:tabMode="fixed"
+        android:background="@color/bg"
+        app:tabTextColor="@color/text2" app:tabSelectedTextColor="@color/text"
+        app:tabIndicatorColor="@color/accent"
+        android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/pager"
+        android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" />
+    <TextView android:id="@+id/bannerPerm"
+        android:text="⚠ Izin belum lengkap — ketuk untuk perbaiki"
+        android:visibility="gone" android:padding="12dp"
+        android:background="#3A2A00" android:textColor="@color/warn"
+        android:layout_width="match_parent" android:layout_height="wrap_content" />
+</LinearLayout>
