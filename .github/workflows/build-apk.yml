@@ -16,3 +16,16 @@ jobs:
       - run: gradle :app:assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with: { name: timenest-debug-apk, path: app/build/outputs/apk/debug/*.apk }
+      - name: Decode keystore + build release signed
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > $RUNNER_TEMP/release.keystore
+          export KEYSTORE_PATH=$RUNNER_TEMP/release.keystore
+          echo "KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> $GITHUB_ENV
+          gradle :app:assembleRelease --no-daemon
+      - uses: actions/upload-artifact@v4
+        with: { name: timenest-release-apk, path: app/build/outputs/apk/release/*.apk }
