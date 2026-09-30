@@ -15,6 +15,8 @@ import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.datastore.preferences.core.edit
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 object Perms {
@@ -43,6 +45,20 @@ object TimerOpts {
     var soundOn = true
 }
 
+object Draft {
+    private val DM = androidx.datastore.preferences.core.intPreferencesKey("dMin")
+    private val DMO = androidx.datastore.preferences.core.stringPreferencesKey("dMode")
+    private val DEH = androidx.datastore.preferences.core.intPreferencesKey("dEH")
+    private val DEM = androidx.datastore.preferences.core.intPreferencesKey("dEM")
+    suspend fun load(c: Context): Array<Any> {
+        val p = c.ds.data.first()
+        return arrayOf(p[DM] ?: 10, p[DMO] ?: "countdown", p[DEH] ?: 18, p[DEM] ?: 0)
+    }
+    suspend fun save(c: Context, m: Int, mo: String, eh: Int, em: Int) {
+        c.ds.edit { it[DM] = m; it[DMO] = mo; it[DEH] = eh; it[DEM] = em }
+    }
+}
+
 // ---------- TAB 1 : WAKTU TUNGGU LAYAR ----------
 class TimeoutFragment : Fragment() {
     private val items = listOf("15 dtk" to 15000, "30 dtk" to 30000, "1 mnt" to 60000,
@@ -55,7 +71,7 @@ class TimeoutFragment : Fragment() {
         val cb = v.findViewById<CheckBox>(R.id.cbSessionOnly)
         lifecycleScope.launch {
             cb.isChecked = ScreenTimeoutHelper.getMode(requireContext()) == 1
-            info.text = "Aktif: ${curName()}"
+            buildGrid(grid, info, ScreenTimeoutHelper.current(requireContext()))
         }
         cb.setOnCheckedChangeListener { _, on ->
             lifecycleScope.launch {
@@ -63,20 +79,21 @@ class TimeoutFragment : Fragment() {
                 Toast.makeText(context, if (on) "Timeout diubah selama sesi, dikembalikan setelahnya" else "Timeout diubah permanen", Toast.LENGTH_SHORT).show()
             }
         }
-        items.forEach { (name, ms) ->
-            val btn = Button(context).apply {
-                text = (if (ms == ScreenTimeoutHelper.getValSync(context)) "✓ " else "⏻ ") + name
-                setOnClickListener { pick(name, ms, info, grid) }
-            }
-            grid.addView(btn)
-        }
         return v
     }
-    private suspend fun curName(): String {
-        val ms = ScreenTimeoutHelper.getVal(requireContext())
-        return items.firstOrNull { it.second == ms }?.first ?: "sistem"
+    private fun buildGrid(grid: GridLayout, info: TextView, cur: Int) {
+        grid.removeAllViews()
+        info.text = "Aktif: ${nameOf(cur)}"
+        items.forEachIndexed { idx, (name, ms) ->
+            grid.addView(Button(context).apply {
+                text = (if (ms == cur) "✓ " else "") + name
+                setOnClickListener { pick(idx, info, grid) }
+            })
+        }
     }
-    private fun pick(name: String, ms: Int, info: TextView, grid: GridLayout) {
+    private fun nameOf(ms: Int) = items.firstOrNull { it.second == ms }?.first ?: "sistem (${ms / 1000} dtk)"
+    private fun pick(idx: Int, info: TextView, grid: GridLayout) {
+        val (name, ms) = items[idx]
         val c = requireContext()
         if (!Perms.writeOk(c)) {
             AlertDialog.Builder(c).setMessage("Izin 'Ubah Pengaturan Sistem' diperlukan untuk mengatur waktu tunggu layar.")
@@ -88,10 +105,8 @@ class TimeoutFragment : Fragment() {
             val sessionOnly = ScreenTimeoutHelper.getMode(c) == 1
             ScreenTimeoutHelper.set(c, if (sessionOnly) 1 else 0, ms)
             if (!sessionOnly) ScreenTimeoutHelper.applyNow(c, ms)
-            info.text = "Aktif: $name" + if (sessionOnly) " (selama sesi)" else " (permanen)"
-            for (k in 0 until grid.childCount)
-                (grid.getChildAt(k) as Button).text = "⏻ " + items[k].first
-            Toast.makeText(c, "Timeout: $name", Toast.LENGTH_SHORT).show()
+            buildGrid(grid, info, ms) // gambar ulang tanda ✓
+            Toast.makeText(c, "Timeout: $name" + if (sessionOnly) " (selama sesi)" else "", Toast.LENGTH_SHORT).show()
         }
     }
 }
@@ -129,7 +144,7 @@ class SleepFragment : Fragment() {
             if (e.action == android.view.MotionEvent.ACTION_DOWN || e.action == android.view.MotionEvent.ACTION_MOVE) {
                 val cx = vv.width / 2f; val cy = vv.height / 2f
                 val deg = (Math.toDegrees(kotlin.math.atan2((e.x - cx).toDouble(), (cy - e.y).toDouble())) + 360) % 360
-                totalMin = (deg / 2).toInt().coerceIn(1, 180)
+                totalMin = (deg * 4).toInt().coerceIn(1, 1440) // lingkaran penuh = 24 jam
                 mode = "countdown"; draw()
             }
             true
@@ -146,8 +161,21 @@ class SleepFragment : Fragment() {
             })
         }
         v.findViewById<View>(R.id.btnStart).setOnClickListener { start() }
+        lifecycleScope.launch {
+            try {
+                val d = Draft.load(requireContext())
+                totalMin = (d[0] as Int).coerceIn(1, 1440); mode = d[1] as String
+                endH = d[2] as Int; endM = d[3] as Int
+                draw()
+            } catch (_: Exception) {}
+        }
         draw()
         return v
+    }
+    override fun onPause() {
+        super.onPause()
+        val c = context ?: return
+        lifecycleScope.launch { try { Draft.save(c, totalMin, mode, endH, endM) } catch (_: Exception) {} }
     }
     private fun draw() {
         if (mode == "countdown") {
@@ -158,7 +186,7 @@ class SleepFragment : Fragment() {
                 val cal = java.util.Calendar.getInstance().apply { timeInMillis = end }
                 sum.text = "Selesai %02d:%02d • %s".format(cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE), TimeCalc.summary(end - now))
             } catch (e: Exception) { sum.text = e.message }
-            ring.progress = (totalMin * 100 / 180).coerceAtMost(100)
+            ring.progress = (totalMin * 100 / 1440).coerceAtMost(100)
         } else {
             tv.text = "%02d:%02d".format(endH, endM)
             val r = TimeCalc.endFromClock(System.currentTimeMillis(), endH, endM, false)
@@ -176,18 +204,31 @@ class SleepFragment : Fragment() {
                 it.endTime
             }
             lifecycleScope.launch {
-                if (SessionStore.pin(c) == null) {
-                    Toast.makeText(c, "Buat PIN dulu", Toast.LENGTH_LONG).show()
+                if (SessionStore.pin(c) == null && !SessionStore.isSkipped(c)) {
+                    Toast.makeText(c, "Buat PIN dulu atau lewati", Toast.LENGTH_LONG).show()
                     startActivity(Intent(c, SetupActivity::class.java)); return@launch
                 }
-                if (!Perms.notifOk(c)) Toast.makeText(c, "Izinkan notifikasi agar hitung mundur terlihat", Toast.LENGTH_LONG).show()
-                SessionStore.save(c, now, end, mode)
-                TimerService.start(c)
-                Toast.makeText(c, "Timer jalan di background — lihat notifikasi", Toast.LENGTH_LONG).show()
-                activity?.finish() // tutup aplikasi, service + notifikasi tetap jalan
+                if (!Perms.notifOk(c)) {
+                    Toast.makeText(c, "Izinkan notifikasi agar hitung mundur terlihat", Toast.LENGTH_LONG).show()
+                    try { requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1) } catch (_: Exception) {}
+                }
+                if (SessionStore.load(c) != null) {
+                    AlertDialog.Builder(c).setMessage("Timer sudah berjalan. Ganti dengan yang baru?")
+                        .setNegativeButton("Batal", null)
+                        .setPositiveButton("Ganti") { _, _ -> doStart(c, now, end) }.show()
+                    return@launch
+                }
+                doStart(c, now, end)
             }
         } catch (e: Exception) { Toast.makeText(c, e.message, Toast.LENGTH_SHORT).show() }
     }
+    private fun doStart(c: Context, now: Long, end: Long) {
+        lifecycleScope.launch {
+            SessionStore.save(c, now, end, mode)
+            TimerService.start(c)
+            Toast.makeText(c, "Timer jalan di background — lihat notifikasi", Toast.LENGTH_LONG).show()
+            activity?.finish() // tutup aplikasi, service + notifikasi tetap jalan
+        }
 }
 
 // ---------- TAB 3 : PENJADWAL ----------

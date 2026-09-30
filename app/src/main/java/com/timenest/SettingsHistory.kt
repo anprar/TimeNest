@@ -11,7 +11,7 @@ import android.provider.Settings
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.datastore.preferences.core.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -89,13 +89,35 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // status disegarkan saat layar dibuka ulang; sengaja tanpa recreate() agar tidak loop
+        if (refreshPending) { refreshPending = false; recreate() }
+    }
+    private var refreshPending = false
+    private val pinCreateLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (it.resultCode == RESULT_OK) {
+            lifecycleScope.launch { SessionStore.setSkipped(this@SettingsActivity, false) }
+            Toast.makeText(this, "PIN tersimpan", Toast.LENGTH_SHORT).show(); recreate()
+        }
+    }
+    private val pinDelLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (it.resultCode == RESULT_OK) {
+            lifecycleScope.launch {
+                SessionStore.clearPin(this@SettingsActivity)
+                SessionStore.setSkipped(this@SettingsActivity, true) // tanpa PIN = semua tindakan bebas
+                Toast.makeText(this@SettingsActivity, "PIN dihapus — mode bebas", Toast.LENGTH_SHORT).show(); recreate()
+            }
+        }
     }
 
     private fun permRow(root: LinearLayout, t: String, d: String, ok: Boolean, act: () -> Unit) {
-        root.addView(TextView(this).apply { text = (if (ok) "✓ " else "✗ ") + t })
+        root.addView(TextView(this).apply {
+            text = (if (ok) "✓ SUDAH ✓  " else "✗ BELUM  ") + t
+            setTextColor(if (ok) 0xFF4CAF50.toInt() else 0xFF9E9E9E.toInt())
+        })
         root.addView(TextView(this).apply { text = d })
-        root.addView(Button(this).apply { text = if (ok) "Aktif — cek ulang" else "Aktifkan"; setOnClickListener { act() } })
+        root.addView(Button(this).apply {
+            text = if (ok) "Aktif ✓" else "Aktifkan"; isEnabled = !ok
+            setOnClickListener { refreshPending = true; act() }
+        })
     }
     private fun ignoringBattery(): Boolean {
         val pm = getSystemService(PowerManager::class.java)
@@ -116,24 +138,15 @@ class SettingsActivity : AppCompatActivity() {
         AlertDialog.Builder(this).setTitle("Diagnosa").setMessage(s).setPositiveButton("OK", null).show()
     }
     private fun askPin() {
-        val e = EditText(this).apply { hint = "PIN baru (min 4 digit)"; inputType = 129 }
-        AlertDialog.Builder(this).setTitle("PIN orang tua").setView(e)
-            .setNegativeButton("Batal", null)
-            .setPositiveButton("Simpan") { _, _ ->
-                val v = e.text.toString()
-                if (v.length < 4) { Toast.makeText(this, "Min 4 digit", Toast.LENGTH_SHORT).show(); return@setPositiveButton }
-                lifecycleScope.launch { SessionStore.setPin(this@SettingsActivity, PinUtil.hash(v)); Toast.makeText(this@SettingsActivity, "PIN tersimpan", Toast.LENGTH_SHORT).show(); recreate() }
-            }.show()
+        pinCreateLauncher.launch(PinActivity.createIntent(this, "create"))
     }
     private fun delPin() {
-        val e = EditText(this).apply { hint = "PIN saat ini"; inputType = 129 }
-        AlertDialog.Builder(this).setTitle("Hapus PIN").setView(e)
-            .setNegativeButton("Batal", null)
-            .setPositiveButton("Hapus") { _, _ -> lifecycleScope.launch {
-                if (SessionStore.pin(this@SettingsActivity) == PinUtil.hash(e.text.toString())) {
-                    SessionStore.clearPin(this@SettingsActivity); Toast.makeText(this@SettingsActivity, "PIN dihapus", Toast.LENGTH_SHORT).show(); recreate()
-                } else Toast.makeText(this@SettingsActivity, "PIN salah", Toast.LENGTH_SHORT).show()
-            }}.show()
+        lifecycleScope.launch {
+            if (SessionStore.pin(this@SettingsActivity) == null) {
+                Toast.makeText(this@SettingsActivity, "Belum ada PIN", Toast.LENGTH_SHORT).show(); return@launch
+            }
+            pinDelLauncher.launch(PinActivity.createIntent(this@SettingsActivity, "verify"))
+        }
     }
 }
 
@@ -150,7 +163,8 @@ class HistoryActivity : AppCompatActivity() {
             AlertDialog.Builder(this@HistoryActivity).setView(e).setNegativeButton("Batal", null)
                 .setPositiveButton("Hapus") { _, _ -> lifecycleScope.launch {
                     val h = SessionStore.pin(this@HistoryActivity)
-                    if (h == null || (h.isNotEmpty() && h == PinUtil.hash(e.text.toString()))) {
+                    val skip = SessionStore.isSkipped(this@HistoryActivity)
+                    if (h == null || skip || (h.isNotEmpty() && h == PinUtil.hash(e.text.toString()))) {
                         SessionStore.clearHist(this@HistoryActivity); t.text = "Dihapus."
                     } else Toast.makeText(this@HistoryActivity, "PIN salah", Toast.LENGTH_SHORT).show()
                 }}.show()

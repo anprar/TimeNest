@@ -24,9 +24,12 @@ object ScreenTimeoutHelper {
     suspend fun getMode(c: Context) = c.ds.data.map { it[MODE] ?: 1 }.first()
     suspend fun getVal(c: Context) = c.ds.data.map { it[VAL] ?: 60000 }.first()
     suspend fun set(c: Context, mode: Int, v: Int) { c.ds.edit { it[MODE] = mode; it[VAL] = v } }
-    fun getValSync(c: Context): Int = try {
-        kotlinx.coroutines.runBlocking { getVal(c) }
-    } catch (_: Exception) { 60000 }
+    // default = nilai sistem saat ini (jujur), bukan 1 menit sembarangan
+    suspend fun current(c: Context): Int {
+        val s = c.ds.data.map { it[VAL] }.first()
+        if (s != null) return s
+        return try { Settings.System.getInt(c.contentResolver, Settings.System.SCREEN_OFF_TIMEOUT, 60000) } catch (_: Exception) { 60000 }
+    }
     fun canWrite(c: Context) = Settings.System.canWrite(c)
     fun reqWrite(c: Context) { try { c.startActivity(Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply { data = android.net.Uri.parse("package:${c.packageName}") }.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) {} }
     fun applyNow(c: Context, v: Int) {

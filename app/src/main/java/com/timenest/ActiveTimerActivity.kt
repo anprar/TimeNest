@@ -97,8 +97,13 @@ class ActiveTimerActivity : AppCompatActivity() {
     }
 
     private fun askPin(ok: () -> Unit) {
-        pendingPin = ok
-        pinLauncher.launch(PinActivity.createIntent(this, "verify"))
+        lifecycleScope.launch {
+            if (SessionStore.pin(this@ActiveTimerActivity) == null || SessionStore.isSkipped(this@ActiveTimerActivity)) {
+                ok(); return@launch // mode bebas PIN
+            }
+            pendingPin = ok
+            pinLauncher.launch(PinActivity.createIntent(this@ActiveTimerActivity, "verify"))
+        }
     }
 
     override fun onDestroy() { hd.removeCallbacks(tick); super.onDestroy() }
