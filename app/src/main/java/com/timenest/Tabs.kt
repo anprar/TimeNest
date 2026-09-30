@@ -229,6 +229,7 @@ class SleepFragment : Fragment() {
             Toast.makeText(c, "Timer jalan di background — lihat notifikasi", Toast.LENGTH_LONG).show()
             activity?.finish() // tutup aplikasi, service + notifikasi tetap jalan
         }
+    }
 }
 
 // ---------- TAB 3 : PENJADWAL ----------
