@@ -77,6 +77,8 @@ class TimerService : Service() {
         } catch (_: Exception) {}
     }
     private suspend fun onFinish(start: Long, end: Long, mode: String) {
+        if (!FinishGuard.done.add(end)) { stopSelf(); return } // sudah dikunci via alarm
+        FinishAlarm.cancel(this)
         if (TimerOpts.soundOn) warn("Waktu habis")
         val locked = if (TimerOpts.lockAtEnd) lockNow() else false
         val status = when {

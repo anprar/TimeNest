@@ -68,12 +68,14 @@ class ActiveTimerActivity : AppCompatActivity() {
                 val r = TimeCalc.remain(end, System.currentTimeMillis())
                 SessionStore.pause(this@ActiveTimerActivity, r)
                 TimerService.stop(this@ActiveTimerActivity)
+                FinishAlarm.cancel(this@ActiveTimerActivity)
                 hd.removeCallbacks(tick)
                 txt.text = TimeCalc.format(r) + " (jeda)"
                 Toast.makeText(this@ActiveTimerActivity, "Dijeda", Toast.LENGTH_SHORT).show()
             } else {
                 end = SessionStore.resume(this@ActiveTimerActivity)
                 TimerService.start(this@ActiveTimerActivity)
+                FinishAlarm.schedule(this@ActiveTimerActivity, end)
                 hd.post(tick)
             }
         }
@@ -84,6 +86,7 @@ class ActiveTimerActivity : AppCompatActivity() {
             SessionStore.addHist(this@ActiveTimerActivity, "${java.util.Date()} | $mode | DIBATALKAN")
             SessionStore.clear(this@ActiveTimerActivity)
             TimerService.stop(this@ActiveTimerActivity)
+            FinishAlarm.cancel(this@ActiveTimerActivity)
             finish()
         }
     }

@@ -82,8 +82,8 @@ class SettingsActivity : AppCompatActivity() {
             permRow(root, "Alarm Persis", "Agar jadwal tepat waktu.", Perms.exactOk(this)) { Perms.reqExact(this) }
         permRow(root, "Abaikan Optimasi Baterai", "Agar tidak dimatikan OPPO/ColorOS.", ignoringBattery()) { reqIgnoreBattery() }
 
-        h("Panduan OPPO/ColorOS")
-        p("1. Pengaturan > Baterai > izinkan autostart & background.\n2. Matikan optimasi baterai untuk TimeNest.\n3. Kunci aplikasi di recent-apps.")
+        h("Panduan Baterai (semua HP)")
+        p("1. Pengaturan > Aplikasi > TimeNest > Baterai > Tanpa pembatasan.\n2. Izinkan autostart/berjalan di latar.\n3. Kunci aplikasi di layar recent-apps.")
         root.addView(Button(this).apply { text = "Diagnosa"; setOnClickListener { diagnosa() } })
         root.addView(Button(this).apply { text = "Riwayat"; setOnClickListener { startActivity(Intent(this@SettingsActivity, HistoryActivity::class.java)) } })
     }

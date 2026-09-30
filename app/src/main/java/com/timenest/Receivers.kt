@@ -19,7 +19,10 @@ class BootReceiver : android.content.BroadcastReceiver() {
         if (i.action == Intent.ACTION_BOOT_COMPLETED) {
             CoroutineScope(Dispatchers.IO).launch {
                 val t = SessionStore.load(c)
-                if (t != null && t.second > System.currentTimeMillis()) TimerService.start(c)
+                if (t != null && t.second > System.currentTimeMillis()) {
+                    TimerService.start(c)
+                    FinishAlarm.schedule(c, t.second)
+                }
                 try { ScheduleStore.arm(c) } catch (_: Exception) {}
             }
         }

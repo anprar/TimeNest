@@ -59,6 +59,7 @@
         </receiver>
 
         <receiver android:name=".ScheduleReceiver" android:exported="false" />
+        <receiver android:name=".FinishReceiver" android:exported="false" />
         <service android:name=".QSTile"
             android:label="TimeNest"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"

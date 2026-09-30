@@ -116,6 +116,7 @@ class SleepFragment : Fragment() {
     private var totalMin = 10
     private var mode = "countdown"
     private var endH = 18; private var endM = 0
+    private var dragging = false
     private lateinit var tv: TextView
     private lateinit var sum: TextView
     private lateinit var ring: ProgressBar
@@ -137,14 +138,27 @@ class SleepFragment : Fragment() {
             }
         }
         v.findViewById<View>(R.id.btnMinus).setOnClickListener { totalMin = (totalMin - 1).coerceAtLeast(1); mode = "countdown"; draw() }
-        v.findViewById<View>(R.id.btnPlus).setOnClickListener { totalMin = (totalMin + 1).coerceAtMost(720); mode = "countdown"; draw() }
+        v.findViewById<View>(R.id.btnPlus).setOnClickListener { totalMin = (totalMin + 1).coerceAtMost(120); mode = "countdown"; draw() }
         val dial = v.findViewById<View>(R.id.dialWrap)
         dial.setOnTouchListener { vv, e ->
-            if (e.action == android.view.MotionEvent.ACTION_DOWN) vv.parent.requestDisallowInterceptTouchEvent(true)
+            val cx = vv.width / 2f; val cy = vv.height / 2f
+            when (e.action) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    // hanya geser jika sentuhan tepat di cincin (bukan tengah/luar) agar scroll aman
+                    val r = kotlin.math.hypot((e.x - cx).toDouble(), (cy - e.y).toDouble())
+                    dragging = r > kotlin.math.min(cx, cy) * 0.55
+                    if (!dragging) return@setOnTouchListener false
+                    vv.parent.requestDisallowInterceptTouchEvent(true)
+                }
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    dragging = false
+                    return@setOnTouchListener true
+                }
+            }
+            if (!dragging) return@setOnTouchListener false
             if (e.action == android.view.MotionEvent.ACTION_DOWN || e.action == android.view.MotionEvent.ACTION_MOVE) {
-                val cx = vv.width / 2f; val cy = vv.height / 2f
                 val deg = (Math.toDegrees(kotlin.math.atan2((e.x - cx).toDouble(), (cy - e.y).toDouble())) + 360) % 360
-                totalMin = (deg * 4).toInt().coerceIn(1, 1440) // lingkaran penuh = 24 jam
+                totalMin = (deg / 3).toInt().coerceIn(1, 120) // lingkaran penuh = 2 jam
                 mode = "countdown"; draw()
             }
             true
@@ -154,7 +168,7 @@ class SleepFragment : Fragment() {
             TimePickerDialog(context, { _, h, m -> endH = h; endM = m; mode = "clock"; draw() }, endH, endM, true).show()
         }
         val grid = v.findViewById<GridLayout>(R.id.gridPreset)
-        listOf(30, 60, 90, 120, 150, 180).forEach { p ->
+        listOf(15, 30, 45, 60, 90, 120).forEach { p ->
             grid.addView(Button(context).apply {
                 text = "%02d:%02d".format(p / 60, p % 60)
                 setOnClickListener { totalMin = p; mode = "countdown"; draw() }
@@ -164,7 +178,7 @@ class SleepFragment : Fragment() {
         lifecycleScope.launch {
             try {
                 val d = Draft.load(requireContext())
-                totalMin = (d[0] as Int).coerceIn(1, 1440); mode = d[1] as String
+                totalMin = (d[0] as Int).coerceIn(1, 120); mode = d[1] as String
                 endH = d[2] as Int; endM = d[3] as Int
                 draw()
             } catch (_: Exception) {}
@@ -186,7 +200,7 @@ class SleepFragment : Fragment() {
                 val cal = java.util.Calendar.getInstance().apply { timeInMillis = end }
                 sum.text = "Selesai %02d:%02d • %s".format(cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE), TimeCalc.summary(end - now))
             } catch (e: Exception) { sum.text = e.message }
-            ring.progress = (totalMin * 100 / 1440).coerceAtMost(100)
+            ring.progress = (totalMin * 100 / 120).coerceAtMost(100)
         } else {
             tv.text = "%02d:%02d".format(endH, endM)
             val r = TimeCalc.endFromClock(System.currentTimeMillis(), endH, endM, false)
@@ -226,8 +240,9 @@ class SleepFragment : Fragment() {
         lifecycleScope.launch {
             SessionStore.save(c, now, end, mode)
             TimerService.start(c)
+            FinishAlarm.schedule(c, end) // pengaman: kunci tepat waktu walau HP tidur (Doze)
             Toast.makeText(c, "Timer jalan di background — lihat notifikasi", Toast.LENGTH_LONG).show()
-            activity?.finish() // tutup aplikasi, service + notifikasi tetap jalan
+            activity?.run { moveTaskToBack(true); finish() } // paksa ke layar utama, aplikasi tertutup
         }
     }
 }

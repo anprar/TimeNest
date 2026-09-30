@@ -33,7 +33,7 @@ class SetupActivity : AppCompatActivity() {
         permRow(permBox, "Notifikasi", "Tampilkan hitung mundur.", Perms.notifOk(this)) { reqNotif() }
         if (Build.VERSION.SDK_INT >= 31)
             permRow(permBox, "Alarm Persis", "Jadwal tepat waktu.", Perms.exactOk(this)) { Perms.reqExact(this) }
-        permRow(permBox, "Abaikan Optimasi Baterai", "Tidak dimatikan OPPO.", ignoringBattery()) { reqIgnoreBattery() }
+        permRow(permBox, "Abaikan Optimasi Baterai", "Tetap jalan di background.", ignoringBattery()) { reqIgnoreBattery() }
     }
 
     private val pinLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -46,8 +46,10 @@ class SetupActivity : AppCompatActivity() {
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
         lifecycleScope.launch {
-            if (SessionStore.pin(this@SetupActivity) != null) {
-                startActivity(Intent(this@SetupActivity, MainActivity::class.java)); finish(); return@launch
+            if (SessionStore.pin(this@SetupActivity) != null || SessionStore.isSkipped(this@SetupActivity)) {
+                startActivity(Intent(this@SetupActivity, MainActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                }); finish(); return@launch
             }
             build()
         }
@@ -85,7 +87,9 @@ class SetupActivity : AppCompatActivity() {
                     if (SessionStore.pin(this@SetupActivity) == null && !SessionStore.isSkipped(this@SetupActivity)) {
                         Toast.makeText(this@SetupActivity, "Buat PIN dulu atau LEWATI", Toast.LENGTH_SHORT).show(); return@launch
                     }
-                    startActivity(Intent(this@SetupActivity, MainActivity::class.java)); finish()
+                    startActivity(Intent(this@SetupActivity, MainActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                    }); finish()
                 }
             }
         })
