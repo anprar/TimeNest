@@ -51,14 +51,14 @@
     <TextView android:text="Opsi Akhir Timer" android:textColor="@color/text"
         android:layout_marginTop="12dp"
         android:layout_width="match_parent" android:layout_height="wrap_content" />
-    <CheckBox android:id="@+id/cbLock" android:text="Matikan / kunci layar (butuh Aksesibilitas atau Admin)"
+    <CheckBox android:id="@+id/cbLock" android:text="Matikan / kunci layar (butuh Admin Perangkat)"
         android:textColor="@color/text" android:checked="true"
         android:layout_width="match_parent" android:layout_height="wrap_content" />
     <CheckBox android:id="@+id/cbSound" android:text="Suara + getar peringatan &amp; waktu habis"
         android:textColor="@color/text" android:checked="true"
         android:layout_width="match_parent" android:layout_height="wrap_content" />
     <TextView android:id="@+id/tvLockWarn" android:textColor="@color/warn" android:visibility="gone"
-        android:text="⚠ Belum ada metode kunci — aktifkan Aksesibilitas atau Admin."
+        android:text="⚠ Izin Admin belum aktif — perangkat tidak akan terkunci."
         android:layout_width="match_parent" android:layout_height="wrap_content" />
 </LinearLayout>
 </ScrollView>

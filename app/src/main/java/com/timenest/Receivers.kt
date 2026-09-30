@@ -37,7 +37,7 @@ object AdminHelper {
     fun request(c: Context) {
         val i = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
             putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, ComponentName(c, TimeNestDeviceAdmin::class.java))
-            putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Opsional. Alternatif mudah: Aksesibilitas TimeNest.")
+            putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Diperlukan agar TimeNest dapat mengunci layar saat waktu habis.")
         }
         c.startActivity(i)
     }
@@ -62,24 +62,18 @@ object AccessHelper {
     }
 }
 
-// Admin TIDAK wajib. Urutan: aksesibilitas (mudah lepas) > admin > jujur gagal.
+// Admin UTAMA, aksesibilitas cadangan. Urutan: admin > aksesibilitas > jujur gagal.
 object LockHelper {
     suspend fun lock(c: Context): String {
-        val pref = try { UiPrefs.lockMode(c) } catch (_: Exception) { "kunci" }
-        val accessOk = try { TimeNestAccess.lock() } catch (_: Exception) { false }
+        try { UiPrefs.lockMode(c) } catch (_: Exception) {}
         val adminOk = try {
             val dpm = c.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
             val cn = ComponentName(c, TimeNestDeviceAdmin::class.java)
             if (dpm.isAdminActive(cn)) { dpm.lockNow(); true } else false
         } catch (_: Exception) { false }
-        // "mati" = utamakan aksesibilitas; "kunci" = utamakan admin
-        if (pref == "mati") {
-            if (accessOk) return "SELESAI, layar dimatikan via aksesibilitas"
-            if (adminOk) return "SELESAI dikunci via Admin"
-        } else {
-            if (adminOk) return "SELESAI dikunci via Admin"
-            if (accessOk) return "SELESAI, layar dimatikan via aksesibilitas"
-        }
-        return "SELESAI tapi GAGAL mengunci — aktifkan Aksesibilitas atau Admin di Pengaturan"
+        if (adminOk) return "SELESAI dikunci via Admin"
+        val accessOk = try { TimeNestAccess.lock() } catch (_: Exception) { false }
+        if (accessOk) return "SELESAI, layar dimatikan via aksesibilitas"
+        return "SELESAI tapi GAGAL mengunci — aktifkan Admin Perangkat atau Aksesibilitas di Pengaturan"
     }
 }

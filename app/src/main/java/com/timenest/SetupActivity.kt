@@ -28,9 +28,9 @@ class SetupActivity : AppCompatActivity() {
 
     private fun refreshPerms() {
         permBox.removeAllViews()
-        permRow(permBox, "Aksesibilitas TimeNest (disarankan)", "Kunci layar saat waktu habis. Mudah dimatikan, tidak menghalangi uninstal.", AccessHelper.isOn(this)) { AccessHelper.open(this) }
+        permRow(permBox, "Administrator Perangkat (utama)", "Kunci layar saat waktu habis.", AdminHelper.isActive(this)) { AdminHelper.request(this) }
+        permRow(permBox, "Aksesibilitas TimeNest (cadangan)", "Alternatif pengunci bila Admin mati.", AccessHelper.isOn(this)) { AccessHelper.open(this) }
         permRow(permBox, "Ubah Pengaturan Sistem", "Waktu tunggu layar.", Perms.writeOk(this)) { ScreenTimeoutHelper.reqWrite(this) }
-        permRow(permBox, "Administrator Perangkat (opsional)", "Cadangan pengunci. Catatan: harus dinonaktifkan dulu sebelum uninstal.", AdminHelper.isActive(this)) { AdminHelper.request(this) }
         permRow(permBox, "Notifikasi", "Tampilkan hitung mundur.", Perms.notifOk(this)) { reqNotif() }
         if (Build.VERSION.SDK_INT >= 31)
             permRow(permBox, "Alarm Persis", "Jadwal tepat waktu.", Perms.exactOk(this)) { Perms.reqExact(this) }

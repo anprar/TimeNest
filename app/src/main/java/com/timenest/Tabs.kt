@@ -132,10 +132,10 @@ class SleepFragment : Fragment() {
         lock.setOnClickListener {
             if (!AdminHelper.isActive(requireContext()) && !AccessHelper.isOn(requireContext())) {
                 warn.visibility = View.VISIBLE
-                AlertDialog.Builder(requireContext()).setMessage("Pilih cara mengunci (Admin tidak wajib):\n• Aksesibilitas — mudah dilepas, uninstal normal\n• Admin — kunci penuh")
+                AlertDialog.Builder(requireContext()).setMessage("Aktifkan pengunci (Admin utama, aksesibilitas cadangan).")
                     .setNegativeButton("Nanti", null)
-                    .setPositiveButton("Aksesibilitas") { _, _ -> AccessHelper.open(requireContext()) }
-                    .setNeutralButton("Admin") { _, _ -> AdminHelper.request(requireContext()) }.show()
+                    .setPositiveButton("Admin") { _, _ -> AdminHelper.request(requireContext()) }
+                    .setNeutralButton("Aksesibilitas") { _, _ -> AccessHelper.open(requireContext()) }.show()
             }
         }
         v.findViewById<View>(R.id.btnMinus).setOnClickListener { totalMin = (totalMin - 1).coerceAtLeast(1); mode = "countdown"; draw() }

@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.View
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -16,19 +17,23 @@ import java.util.Calendar
 
 class ActiveTimerActivity : AppCompatActivity() {
     private lateinit var txt: TextView
-    private lateinit var sub: TextView
+    private lateinit var state: TextView
+    private lateinit var info: TextView
+    private lateinit var warn: TextView
+    private lateinit var ring: ProgressBar
+    private val hd = Handler(Looper.getMainLooper())
+    private var end = 0L; private var start = 0L; private var mode = ""
     private var pendingPin: (() -> Unit)? = null
     private val pinLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == RESULT_OK) pendingPin?.invoke()
         pendingPin = null
     }
-    private val hd = Handler(Looper.getMainLooper())
-    private var end = 0L; private var start = 0L; private var mode = ""
     private val tick = object : Runnable {
         override fun run() {
-            val now = System.currentTimeMillis()
-            val r = TimeCalc.remain(end, now)
+            val r = TimeCalc.remain(end, System.currentTimeMillis())
             txt.text = TimeCalc.format(r)
+            val total = (end - start).coerceAtLeast(1L)
+            ring.progress = (r * 100 / total).toInt().coerceIn(0, 100)
             if (r <= 0) { finishTimer(); return }
             hd.postDelayed(this, 1000)
         }
@@ -36,22 +41,25 @@ class ActiveTimerActivity : AppCompatActivity() {
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
-        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 48, 32, 32) }
-        setContentView(root)
-        txt = TextView(this).apply { textSize = 56f }; root.addView(txt)
-        sub = TextView(this).apply { textSize = 16f }; root.addView(sub)
-        val bP = Button(this).apply { text = "Pause / Resume"; setOnClickListener { askPin { togglePause() } } }
-        val bX = Button(this).apply { text = "Batalkan (PIN)"; setOnClickListener { askPin { cancel() } } }
-        root.addView(bP); root.addView(bX)
+        setContentView(R.layout.activity_active)
+        txt = findViewById(R.id.tvTime)
+        state = findViewById(R.id.tvState)
+        info = findViewById(R.id.tvInfo)
+        warn = findViewById(R.id.tvWarn)
+        ring = findViewById(R.id.ringActive)
+        findViewById<View>(R.id.btnPause).setOnClickListener { askPin { togglePause() } }
+        findViewById<View>(R.id.btnCancel).setOnClickListener { askPin { cancel() } }
         lifecycleScope.launch {
             val t = SessionStore.load(this@ActiveTimerActivity)
             if (t == null) { finish(); return@launch }
             start = t.first; end = t.second; mode = t.third
             val cal = Calendar.getInstance().apply { timeInMillis = end }
-            sub.text = "Mode: $mode\nSelesai: %02d:%02d\nDurasi awal: %s".format(
+            info.text = "Mode: $mode\nSelesai: %02d:%02d • Durasi awal: %s".format(
                 cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), TimeCalc.summary(end - start))
-            // cek status izin lock
-            if (!isAdmin() && !AccessHelper.isOn(this@ActiveTimerActivity)) sub.append("\n⚠ Metode kunci BELUM aktif — perangkat tidak akan terkunci otomatis.")
+            if (!isAdmin() && !AccessHelper.isOn(this@ActiveTimerActivity)) {
+                warn.visibility = View.VISIBLE
+                warn.text = "⚠ Izin Admin belum aktif — perangkat tidak akan terkunci otomatis."
+            }
             hd.post(tick)
         }
     }
@@ -70,12 +78,16 @@ class ActiveTimerActivity : AppCompatActivity() {
                 TimerService.stop(this@ActiveTimerActivity)
                 FinishAlarm.cancel(this@ActiveTimerActivity)
                 hd.removeCallbacks(tick)
-                txt.text = TimeCalc.format(r) + " (jeda)"
-                Toast.makeText(this@ActiveTimerActivity, "Dijeda", Toast.LENGTH_SHORT).show()
+                txt.text = TimeCalc.format(r)
+                state.text = "DIJEDA"
+                state.setTextColor(0xFFFF9800.toInt())
+                Toast.makeText(this@ActiveTimerActivity, "Dijeda — resume untuk lanjut", Toast.LENGTH_SHORT).show()
             } else {
                 end = SessionStore.resume(this@ActiveTimerActivity)
                 TimerService.start(this@ActiveTimerActivity)
                 FinishAlarm.schedule(this@ActiveTimerActivity, end)
+                state.text = "berjalan"
+                state.setTextColor(0xFF4CAF50.toInt())
                 hd.post(tick)
             }
         }
@@ -87,6 +99,7 @@ class ActiveTimerActivity : AppCompatActivity() {
             SessionStore.clear(this@ActiveTimerActivity)
             TimerService.stop(this@ActiveTimerActivity)
             FinishAlarm.cancel(this@ActiveTimerActivity)
+            Toast.makeText(this@ActiveTimerActivity, "Timer dibatalkan", Toast.LENGTH_SHORT).show()
             finish()
         }
     }

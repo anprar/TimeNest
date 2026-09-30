@@ -56,14 +56,14 @@ class SettingsActivity : AppCompatActivity() {
             lifecycleScope.launch { UiPrefs.setTab(this@SettingsActivity, idx) }
         }
 
-        h("Cara Mematikan Layar (Admin tidak wajib)")
-        p("Matikan: utamakan Aksesibilitas (mudah dilepas, uninstal normal).\nKunci: utamakan Admin Perangkat (kunci penuh).")
+        h("Cara Mematikan Layar (Admin utama)")
+        p("Matikan/Kunci: keduanya memakai Admin dulu, cadangan aksesibilitas.")
         val tvMethod = TextView(this); root.addView(tvMethod)
         lifecycleScope.launch {
             val m = UiPrefs.lockMode(this@SettingsActivity)
             tvMethod.text = "Metode aktif: " + when {
-                AccessHelper.isOn(this@SettingsActivity) -> "aksesibilitas ✓"
                 AdminHelper.isActive(this@SettingsActivity) -> "Admin ✓"
+                AccessHelper.isOn(this@SettingsActivity) -> "aksesibilitas ✓"
                 else -> "BELUM ADA — timer tidak akan mengunci"
             } + " (pilihan: $m)"
         }
@@ -84,9 +84,9 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         h("Izin")
-        permRow(root, "Aksesibilitas TimeNest (disarankan)", "Pengunci utama. Mudah dimatikan, tidak menghalangi uninstal.", AccessHelper.isOn(this)) { AccessHelper.open(this) }
+        permRow(root, "Administrator Perangkat (utama)", "Pengunci utama saat waktu habis.", AdminHelper.isActive(this)) { AdminHelper.request(this) }
+        permRow(root, "Aksesibilitas TimeNest (cadangan)", "Alternatif bila Admin mati.", AccessHelper.isOn(this)) { AccessHelper.open(this) }
         permRow(root, "Ubah Pengaturan Sistem", "Untuk waktu tunggu layar.", Perms.writeOk(this)) { ScreenTimeoutHelper.reqWrite(this) }
-        permRow(root, "Administrator Perangkat (opsional)", "Cadangan pengunci.", AdminHelper.isActive(this)) { AdminHelper.request(this) }
         root.addView(Button(this).apply { text = "Nonaktifkan Admin (sebelum uninstal)"; setOnClickListener { AdminHelper.remove(this@SettingsActivity); refreshPending = true } })
         permRow(root, "Notifikasi", "Status & kontrol timer.", Perms.notifOk(this)) { openNotif() }
         if (Build.VERSION.SDK_INT >= 31)
